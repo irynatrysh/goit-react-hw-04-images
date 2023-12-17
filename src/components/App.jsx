@@ -1,4 +1,5 @@
-import React, { Component } from 'react';
+// App.jsx
+import React, { useState, useEffect } from 'react';
 import Searchbar from './Searchbar/Searchbar';
 import ImageGallery from './ImageGallery/ImageGallery';
 import Button from './Button/Button';
@@ -9,73 +10,72 @@ import { Wrapper } from './App.styled';
 
 const perPage = 12;
 
-class App extends Component {
-  state = {
-    images: [],
-    query: '',
-    page: 1,
-    isLoading: false,
-    showModal: false,
-    selectedImage: '',
-    totalCount: 0,
+const App = () => {
+  const [images, setImages] = useState([]);
+  const [query, setQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState('');
+  const [totalCount, setTotalCount] = useState(0);
+
+  const handleSearchSubmit = query => {
+    setQuery(query);
+    setImages([]);
+    setPage(1);
+    setTotalCount(0);
+    setSelectedImage('');
   };
 
-  handleSearchSubmit = (query) => {
-    this.setState({
-      query: query,
-      images: [],
-      page: 1,
-      totalCount: 0,
-      selectedImage: '',
-    });
+  const handleLoadMore = () => {
+    setPage(prevPage => prevPage + 1);
   };
 
-  handleLoadMore = () => {
-    this.setState((prev) => {
-      return { page: prev.page + 1 };
-    });
+  const handleImageClick = imageUrl => {
+    setShowModal(true);
+    setSelectedImage(imageUrl);
   };
 
-  handleImageClick = (imageUrl) => {
-    this.setState({ showModal: true, selectedImage: imageUrl });
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setSelectedImage('');
   };
 
-  handleCloseModal = () => {
-    this.setState({ showModal: false, selectedImage: '' });
-  };
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
 
-  componentDidUpdate(prevProps, prevState) {
-    if (this.state.page !== prevState.page || this.state.query !== prevState.query) {
-      this.setState({ isLoading: true });
-      fetchImages(this.state.query, this.state.page, perPage)
-        .then((response) => {
-          if (response.data.totalHits === 0) return alert('No data for this search');
-          this.setState((prev) => ({
-            images: [...prev.images, ...response.data.hits],
-            totalCount: response.data.totalHits,
-            isLoading: false,
-          }));
-        })
-        .catch((error) => {
-          console.error('Error fetching images:', error);
-        });
+      try {
+        const response = await fetchImages(query, page, perPage);
+        if (response.data.totalHits === 0) {
+          alert('No data for this search');
+        } else {
+          setImages(prevImages => [...prevImages, ...response.data.hits]);
+          setTotalCount(response.data.totalHits);
+        }
+      } catch (error) {
+        console.error('Error fetching images:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (page !== 1 || query !== '') {
+      fetchData();
     }
-  }
+  }, [page, query]);
 
-  render() {
-    const { images, isLoading, showModal, selectedImage } = this.state;
-    const shouldShowLoadMore = this.state.totalCount > perPage && this.state.page * perPage < this.state.totalCount;
+  const shouldShowLoadMore = totalCount > perPage && page * perPage < totalCount;
 
-    return (
-      <Wrapper>
-        <Searchbar onSubmit={this.handleSearchSubmit} />
-        <ImageGallery images={images} onImageClick={this.handleImageClick} />
-        {isLoading && <Loader />}
-        {shouldShowLoadMore && <Button onClick={this.handleLoadMore} />}
-        {showModal && <Modal largeImageURL={selectedImage} onClose={this.handleCloseModal} />}
-      </Wrapper>
-    );
-  }
-}
+  return (
+    <Wrapper>
+      <Searchbar onSubmit={handleSearchSubmit} />
+      <ImageGallery images={images} onImageClick={handleImageClick} />
+      {isLoading && <Loader />}
+      {shouldShowLoadMore && <Button onClick={handleLoadMore} />}
+      {showModal && <Modal largeImageURL={selectedImage} onClose={handleCloseModal} />}
+    </Wrapper>
+  );
+};
 
 export default App;

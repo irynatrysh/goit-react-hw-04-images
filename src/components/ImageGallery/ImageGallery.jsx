@@ -3,7 +3,6 @@ import PropTypes from 'prop-types';
 import ImageGalleryItem from '../ImageGalleryItem/ImageGalleryItem';
 import { ImageGalleryStyled } from './ImageGallery.styled';
 
-
 const ImageGallery = ({ images, onImageClick }) => (
   <ImageGalleryStyled>
     {images.map(image => (

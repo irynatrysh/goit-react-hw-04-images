@@ -8,4 +8,5 @@ export const Loader = () => {
     </LoaderOverlay>
   );
 };
-export default Loader; 
+
+export default Loader;
